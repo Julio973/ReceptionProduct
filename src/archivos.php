@@ -1,5 +1,5 @@
 <?php
-
+//prueba de cambio
 class ArchivoTm{
     private $contenido= "";
     private $nombrearchivo ="default.txt" ;
