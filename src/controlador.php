@@ -8,6 +8,7 @@ class Controlador{
 	private $datos = '';
 	private $database_mongo = '';
 	private $nombre_db_mongo = '';
+	private $nombre_collection = '';
 	function __construct($tipo,$database_name = null) {
         if($tipo === 'mysql'){
         	$this->conectarSQL();
@@ -15,10 +16,10 @@ class Controlador{
         if($tipo === 'mongodb'){
         	if($database_name === null){
         		$this->setDataBaseMongo('productos');
-        		$this->conectarMongo();
+        		//$this->conectarMongo();
         	}else{
         		$this->setDataBaseMongo($database_name);
-        		$this->conectarMongo();
+        		//$this->conectarMongo();
         	}
         }
     }
@@ -51,9 +52,16 @@ class Controlador{
 	function getDataBaseMongo(){
 		return $this->nombre_db_mongo;
 	}
-	private function conectarMongo(){
+	function setCollection($nombre_col){
+		$this->nombre_collection = $nombre_col;
+	}
+	function getCollection(){
+		return $this->nombre_collection;
+	}
+	function conectarMongo(){
 		$this->database_mongo = new MongoDataBase();
 		$this->database_mongo->setDataBase($this->getDataBaseMongo());
+		$this->database_mongo->setCollection($this->getCollection());
 		$this->database_mongo->conectar();
 		$this->database_mongo->accederCollection();
 	}
@@ -63,9 +71,12 @@ class Controlador{
 	function getDatos(){
 		return $this->datos;
 	}
-	function insertarDatos(){
-		$this->database_mongo->setDatos($this->getDatos());
-		$this->database_mongo->insertar();
+	function insertarDatos($datos = null){
+		if($datos === null){
+			$datos = $this->getDatos();
+		}
+		$this->database_mongo->setDatos($datos);
+		return $this->database_mongo->insertar();
 	}
 	function consultar($array = null){
 		$coleccion = '';
@@ -76,8 +87,15 @@ class Controlador{
 		}
 		return $coleccion;
 	}
-	function eliminarCollection(){
-		return $this->database_mongo->eliminarColection();	
+	function eliminarCollection($query = null){
+		if($query === null){
+			return $this->database_mongo->eliminarColection();
+		}else{
+			return $this->database_mongo->eliminarColection($query);
+		}	
+	}
+	function actualizar($where,$set,$sert = array('upsert' => false)){
+		return $this->database_mongo->actualizar($where,$set,$sert);	
 	}
 }
 ?>

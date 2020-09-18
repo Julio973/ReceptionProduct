@@ -1,5 +1,5 @@
 <?php
-require 'E:/xampp-3/htdocs/dev/receptionProduct/vendor/autoload.php';
+require 'E:/xampp-3/htdocs/dev/receptionProduct/ReceptionProduct/vendor/autoload.php';
 
 use Automattic\WooCommerce\Client;
 

@@ -1,5 +1,5 @@
 <?php
-require_once '../vendor/autoload.php';
+require_once 'E:/xampp-3/htdocs/dev/receptionProduct/ReceptionProduct/vendor/autoload.php';
 
 use Firebase\JWT\JWT;
 class Autenticacion{

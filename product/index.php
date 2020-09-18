@@ -33,6 +33,7 @@ if(isset($headers['Authorization'])){
 }*/
 $rp = new ReceptionProduct();
 if(file_get_contents('php://input') !== ''){
+    $tiempo_inicial = microtime(true);
     $data = file_get_contents('php://input'); //atrapa desde postman 
     $data = json_decode($data);
     $key_secury = $data->key_secury;
@@ -45,6 +46,8 @@ if(file_get_contents('php://input') !== ''){
     }else{
         echo 'No Authorized';
     }
+    $tiempo_final = microtime(true);
+    echo ' Tiempo de ejecución '.($tiempo_final - $tiempo_inicial);
 }else{
     //echo '500 Error server';
     echo(json_encode($rp->getProduct()));
