@@ -1,5 +1,5 @@
 <?php
-require '../vendor/autoload.php';
+require 'D:/xampp7/htdocs/dev/receptionProduct/vendor/autoload.php';
 
 class MongoDataBase{
 	private $connection = '';
@@ -12,12 +12,9 @@ class MongoDataBase{
 	}
 	function conectar(){
 		try{
-			if($this->database_name == 'productos'){
-				$this->database = $this->connection->productos;
-			}
-			if($this->database_name == 'wordpress_market'){
-				$this->database = $this->connection->wordpress_market;
-			}
+			$code = '$this->database = $this->connection->'.$this->database_name.';';
+			eval($code);
+			
 		}catch(MongoConnectionException $e){
 			echo 'No se conectó a la base de datos especificada'; 
 			exit();
@@ -35,12 +32,8 @@ class MongoDataBase{
 		$this->collection = $nombre_coleccion;
 	}
 	function accederCollection(){
-		if($this->database_name == 'productos'){
-			$this->collection = $this->database->homedepot;
-		}
-		if($this->database_name == 'wordpress_market'){
-			$this->collection = $this->database->productos_wordpress;
-		}
+		$code = '$this->collection = $this->database->'.$this->collection.';';
+		eval($code);
 		return $this->collection;
 	}
 	function setDatos($datos){
@@ -50,8 +43,18 @@ class MongoDataBase{
 		return $this->data;
 	}
 	function insertar(){
-		$this->collection->insertMany($this->getDatos());
+		$data = $this->getDatos();
+		if(count($data) == 1){
+			$data = $data[0];
+			return $this->collection->insertOne($data);
+		}else{
+			return $this->collection->insertMany($data);
+		}
+		
 	} 
+	function actualizar($where,$set,$upsert){
+		$this->collection->updateMany($where,$set,$upsert);
+	}
 	function consultar($array = null){
 		$coleccion = '';
 		if($array === null){

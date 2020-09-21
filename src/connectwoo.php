@@ -1,5 +1,5 @@
 <?php
-require 'E:/xampp-3/htdocs/dev/receptionProduct/vendor/autoload.php';
+require 'D:/xampp7/htdocs/dev/receptionProduct//vendor/autoload.php';
 
 use Automattic\WooCommerce\Client;
 
@@ -11,8 +11,8 @@ class Connectwoo{
     private $id_term_atributo ="";
     function credencialToWoo(){
         $url = 'http://localhost/dev/wordpress/wp-prueba/';
-        $clave_publica = 'ck_770698b7984f110cd0c356085364dbd508ff9ddf';
-        $clave_privada = 'cs_8fb0067d1ead0d2105696c81083d874d0b54d13c';
+        $clave_publica = 'ck_78c385f849c2b5da52cb416b8f61f70553c8f06c';
+        $clave_privada = 'cs_9f10c6847ed3e26e1235fe8a69ab69ca9f1169b7';
        /* $url = 'http://localhost/pruebapaginawordpres/';
         $clave_publica = 'ck_0d5fef5c02ca4fc8c94362a8be12e5fe794d8c71';
         $clave_privada = 'cs_e697b042675b891fde23587d140b8ee3683fbec6';*/

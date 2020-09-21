@@ -1,352 +1,356 @@
 <?php
-include('archivos.php');
-//include_once ('controlador.php');
-include('email_plantilla/plantilla_email.php');
+include_once ('controlador.php');
 include('connectwoo.php');
 include_once('dbmodel.php');
 class Tienda{
-	function homeDepot($product){
+    function homeDepot($product){
         $cw = new Connectwoo();
         $database = new ConexionBaseDeDatos();
         $database->setDataBase('wp_prueba');
         $database->conectarWoo();
         $check = true;
         $archivo = '';
-		$data_temp = '';
+        $data_temp = '';
         $empezar_de_cero = true;
         $archivo_cambio_precio = '';
-        /*$control_mongo = new Controlador('mongodb');
-        $query = $control_mongo->setDatos($product->skus);
-        //$control_mongo->insertarDatos();
-        //$control_mongo->eliminarCollection();
-        //$product->skus[$x]->storeSku->pricing->specialPrice;
-        $query = array('productId'=> array('$exists' => true));
-        //$control_mongo->eliminarCollection(array('skus.productId'=>'311372548'));
-        $result = $control_mongo->consultar($query);
-        foreach ( $result as $id => $valor )
-        {
-            //echo "$id: ";
-            var_dump($valor);
-            $total = count($valor);
-            echo "Total = ".$total." ";
-            for($q=0;$q<$total;$q++){
-                echo( $valor[$q]->productId.', ' );
+        $control_mongo = new Controlador('mongodb');
+        $control_auxiliar = new Controlador('mongodb');
+        $control_wordpress_market = new Controlador('mongodb');
+        $control_mongo->setDataBaseMongo('bodega');
+        $control_mongo->setCollection('productos');
+        $control_mongo->conectarMongo();
+        $productos_wordpress = array();
+        $total_productos = count($product->skus);
+        if($empezar_de_cero === false){
+            $total_productos_recividos = 0;
+            $total_productos_recividos = count($product->skus);
+            $array_producto_nuevo = array();
+            $total_cambio_de_precio = 0;
+            for($x=0;$x<$total_productos_recividos;$x++){
+                $nombre_marca = '';
+                if(isset($product->skus[$x]->info->brandName)){
+                    $nombre_marca = trim($product->skus[$x]->info->brandName);
+                }
+                if(strtoupper($nombre_marca) == 'SAMSUNG' || strtoupper($nombre_marca) == 'LG ELECTRONICS' || strtoupper($nombre_marca) == 'AMANA' || strtoupper($nombre_marca) == 'BOSCH' || strtoupper($nombre_marca) == 'WHIRLPOOL' || strtoupper($nombre_marca) == 'GE'){
+                    @$product->skus[$x]->categoryID = $product->metadata->categoryID;
+                    $cont = 0;
+                    $check_producto_nuevo = false;
+                    $control_mongo->setCollection('tiendas_productos');
+                    $control_mongo->conectarMongo();
+                    $query = array('$and' => array(array('producto_id' => $product->skus[$x]->productId),array('tienda' => 'homedepot')));
+                    $result = $control_mongo->consultar($query);
+                    $check_repetido = false;
+                    foreach ( $result as $temp){
+                        $check_repetido = true;
+                    }
+                    if($check_repetido){
+                        $control_mongo->setCollection('productos');
+                        $control_mongo->conectarMongo();
+                        $query = array('productId' => $product->skus[$x]->productId);
+                        $result = $control_mongo->consultar($query);
+                        $product_temp = array();
+                        foreach($result as $temp){
+                            $product_temp = $temp;
+                        }
+                        $precio = $product->skus[$x]->storeSku->pricing->originalPrice;
+                        if(isset($product->skus[$x]->storeSku->pricing->specialPrice)){
+                            $precio = $product->skus[$x]->storeSku->pricing->specialPrice;
+                        }
+                        $precio_temp = $product_temp->storeSku->pricing->originalPrice;
+                        if(isset($product_temp->storeSku->pricing->specialPrice)){
+                            $precio_temp = $product_temp->storeSku->pricing->specialPrice;
+                        }
+                        //echo $precio.' * '.$precio_temp;
+                        if($precio != $precio_temp){   
+                            $control_mongo->setCollection('productos_cambio_precios');
+                            $control_mongo->conectarMongo();
+                            $query = array('productId' => $product->skus[$x]->productId);
+                            $result = $control_mongo->consultar($query);
+                            $check_repetido_cambio_precio = false;
+                            foreach ( $result as $temp){
+                                $check_repetido_cambio_precio = true;
+                            }
+                            if($check_repetido_cambio_precio){
+                                $actualiza = array('$set'=> array('storeSku.pricing.specialPrice' => $precio,'estado' => 'pendiente'));
+                                $encuentra = array('productId' => $product->skus[$x]->productId);
+                                $control_mongo->actualizar($encuentra,$actualiza);
+                            }else{
+                                @$product->skus[$x]->estado = 'pendiente';
+                                $control_mongo->insertarDatos([$product->skus[$x]]);
+                            }
+                            $total_cambio_de_precio++;
+                        }
+                    }else{
+                        //$check_producto_nuevo = true;
+                        $control_mongo->setCollection('productos_nuevos');
+                        $control_mongo->conectarMongo();  
+                        $query = array('productId' => $product->skus[$x]->productId);
+                        $result = $control_mongo->consultar($query);
+                        $check_existe = false;
+                        foreach ( $result as $marca_temp){
+                            $check_existe = true;
+                        }
+                        if(!$check_existe){
+                            $check_producto_nuevo = true;
+                            $nuevo_producto = $product->skus[$x];
+                            @$nuevo_producto->estado = 'pendiente';
+                            @$nuevo_producto->tiendas = array();
+                            $nuevo_producto->tiendas[] = 'homedepot';
+                            $array_producto_nuevo[] = $nuevo_producto;
+                        }                  
+                    }
+                }
             }
-        }
-        //print_r($result);
-        //var_dump($result);
-        /*
-
-        for($q=0;$q<$total;$q++){
-            echo $result[$q]->productId.'<br>';
-        }
-        echo 'Total en mongo '.count($valor).' Total en Home '.count($product->skus).' '; */
-        $archivo = new ArchivoTm();
-        $empezar_de_cero = true;
-        $productos = false;
-        $archivo->setNombreArchivo('../data/cambio_precio.txt');
-        $archivo_cambio_precio = $archivo->leerArchivo();
-        $archivo->setNombreArchivo('../data/productos_nuevos.txt');
-        $archivo_producto_nuevo = $archivo->leerArchivo();
-        $archivo->setNombreArchivo('../data/cat_'.$product->metadata->categoryID.'_homedepot.txt');
-        $lee_archivo = $archivo->leerArchivo();
-        $data_temp_full = array();
-        if($lee_archivo == false){
-            @$product->metadata->lote = $lote;
-            @$product->metadata->numero_datos = "1";
-            $total_product = count($product->skus);
+            $contenido_novedad = '';
+            if($total_cambio_de_precio > 0){
+                $contenido_novedad.= $total_cambio_de_precio.' productos cambiarón de precio<br>';
+            }
+            $total_producto_nuevo = count($array_producto_nuevo);
+            if( $total_producto_nuevo > 0){
+                $contenido_novedad.= ' '.$total_producto_nuevo.' nuevos fueron detectados<br>';
+                $control_mongo->setCollection('productos_nuevos');
+                $control_mongo->conectarMongo();  
+                $control_mongo->setDatos($array_producto_nuevo);
+                $control_mongo->insertarDatos();
+            }  
         }else{
-            $empezar_de_cero = false;//modificar a false despues desde la primera vez
-            $check_cambio_precio = false;
-            $super_check_cambio_precio = false;
-            $total_cambio_precio = 0;
-            $total_productos_nuevos = 0;
-            $numero_datos = 1; 
-            $temp_cambio_precio = array();
-            $temp_productos_nuevos = array();
-            if($archivo_cambio_precio){
-                $temp_cambio_precio = json_decode($archivo_cambio_precio);
-                $total_cambio_precio = count($temp_cambio_precio);
+            $control_wordpress_market->setDataBaseMongo('wp_market');
+            $productos_para_insertar_mongo = array();
+            $control_wordpress_market->setCollection('productos');
+            $control_wordpress_market->conectarMongo();
+            /*$control_mongo->setCollection('tiendas_productos');
+            $control_mongo->conectarMongo();
+            $query = array('bodega_id' => new MongoDB\BSON\ObjectID('5f638dcc924b00008e00534c'));
+            $query = array('bodega_id' => '5f638dcc924b00008e00534c');
+            $result = $control_mongo->consultar();
+            foreach ( $result as $marca_temp){
+                //echo $marca_temp->name.': ['.implode(',',(array)$marca_temp->term).'], ';
+                echo $marca_temp->producto_id.', ';
+            }*/
+            /*
+            $control_wordpress_market->eliminarCollection();
+            $control_wordpress_market->setCollection('marcas');
+            $control_wordpress_market->conectarMongo();
+            $result = $control_wordpress_market->consultar();
+            foreach ( $result as $test){
+                echo 'marcas : '.$test->brandName;
             }
-            if($archivo_producto_nuevo){
-                $temp_productos_nuevos = json_decode($archivo_producto_nuevo);
-                $total_productos_nuevos = count($temp_productos_nuevos);
+            $control_wordpress_market->eliminarCollection();
+            $control_wordpress_market->setCollection('atributos');
+            $control_wordpress_market->conectarMongo();
+            $control_wordpress_market->eliminarCollection();
+            $control_mongo->setCollection('productos');
+            $control_mongo->conectarMongo();
+            $result = $control_mongo->consultar();
+            foreach ( $result as $test){
+                echo 'bodega: '.$test->productId;
             }
-            $total_product = count($product->skus);
-            $data_temp_full = json_decode($lee_archivo);
-            //print_r($data_temp_full->skus[0]->productId);
-            //exit();
-            if($empezar_de_cero === false){ 
-                $nueva_notificacion = array();
-    	        $notificacion_producto_nuevo = '';
-    	        $validar_nuevo_producto = false;
-                $total_product_database = count($data_temp_full->skus);
-                for($x=0;$x<$total_product;$x++){
-    	        	$check = false;
-                    for($y=0;$y<$total_product_database;$y++){
-                        if($product->skus[$x]->productId === $data_temp_full->skus[$y]->productId){ 
-                            @$product->skus[$x]->woocomerce_id = $data_temp_full->skus[$y]->woocomerce_id;
-                            $check = true;
-                            $originalPriceProduct = $product->skus[$x]->storeSku->pricing->specialPrice;
+            $control_mongo->eliminarCollection();
+            $control_mongo->setCollection('tiendas_productos');
+            $control_mongo->conectarMongo();
+            $result = $control_mongo->consultar();
+            foreach ( $result as $test){
+                echo 'tien-prod: '.$test->tienda;
+            }
+            $control_mongo->eliminarCollection();
+            $control_mongo->setCollection('productos_cambio_precios');
+            $control_mongo->conectarMongo();
+            $result = $control_mongo->consultar();
+            foreach ( $result as $test){
+                echo 'cambio-precio: '.$test->info->productLabel;
+            }
+            $control_mongo->eliminarCollection();
+            $control_mongo->setCollection('productos_nuevos');
+            $control_mongo->conectarMongo();
+            $result = $control_mongo->consultar();
+            foreach ( $result as $test){
+                echo 'Producto Nuevo'.$test->info->productLabel;
+            }
+            $control_mongo->eliminarCollection();
+            exit();*/
+            for($x=0;$x<$total_productos;$x++){
+                $control_mongo->setCollection('tiendas_productos');
+                $control_mongo->conectarMongo();
+                $query = array('$and' => array(array('producto_id' => $product->skus[$x]->productId),array('tienda' => 'homedepot')));
+                $result = $control_mongo->consultar($query);
+                $check_repetido = false;
+                foreach ( $result as $marca_temp){
+                    $check_repetido = true;
+                }
+                if(!$check_repetido){
+                    $control_mongo->setCollection('productos');
+                    $control_mongo->conectarMongo();
+                    @$product->skus[$x]->categoryID = $product->metadata->categoryID;
+                    $control_wordpress_market->setCollection('marcas');
+                    $control_wordpress_market->conectarMongo();
+                    if(isset($product->skus[$x]->info->brandName)){
+                        $nombre_marca = trim($product->skus[$x]->info->brandName);
+                        if(strtoupper($nombre_marca) == 'SAMSUNG' || strtoupper($nombre_marca) == 'LG ELECTRONICS' || strtoupper($nombre_marca) == 'AMANA' || strtoupper($nombre_marca) == 'BOSCH' || strtoupper($nombre_marca) == 'WHIRLPOOL' || strtoupper($nombre_marca) == 'GE'){
+                            $query = array('brandName' => $nombre_marca);
+                            $result = $control_wordpress_market->consultar($query);
+                            $check_marcas = false;
+                            $id_marca = '';
+                            foreach ( $result as $marca_temp){
+                                $check_marcas = true;
+                                $id_marca = $marca_temp->wp_id;
+                            }
+                            if(!$check_marcas){
+                                $database->crearMarca($nombre_marca);
+                                $id_marca = $database->getIdMarca();
+                                $insertar = [array('brandName' => $nombre_marca,'wp_id' => "".$id_marca)];
+                                $control_wordpress_market->setDatos($insertar);
+                                $control_wordpress_market->insertarDatos($insertar);
+                            }
+                            $precio = $product->skus[$x]->storeSku->pricing->originalPrice;
                             if(isset($product->skus[$x]->storeSku->pricing->specialPrice)){
-                                $originalPrice = $product->skus[$x]->storeSku->pricing->specialPrice;
+                                $precio = $product->skus[$x]->storeSku->pricing->specialPrice;
                             }
-                            $originalPriceDataBase = $data_temp_full->skus[$y]->storeSku->pricing->specialPrice;
-                            if(isset($data_temp_full->skus[$y]->storeSku->pricing->specialPrice)){
-                                $originalPrice = $data_temp_full->skus[$y]->storeSku->pricing->specialPrice;
-                            }
-                            if($originalPriceProduct != $originalPriceDataBase){
-                                $check_cambio_precio = true;
-                                $super_check_cambio_precio = true;
-                            }
-                        }
-                    }
-                    
-    	        	if($check == false){
-                        $validar_nuevo_producto = true;
-                        $check_exist_en_nuevo_producto = false;
-                        for($c=0;$c<$total_productos_nuevos;$c++){
-                            if($temp_productos_nuevos[$c]->productId === $product->skus[$x]->productId){
-                                $check_exist_en_nuevo_producto = true;
-                                break;
-                            }
-                        }
-                        if(!$check_exist_en_nuevo_producto){
-                            array_push($temp_productos_nuevos,$product->skus[$x]);
-                            @$temp_productos_nuevos[(count($temp_productos_nuevos) - 1)]->categoryID = $product->metadata->categoryID;
-                        }
-    	        	}
-                    if($check_cambio_precio){
-                        $check_exist_product_cambio_precio = false;
-                        for($b=0;$b<$total_cambio_precio;$b++){
-                            if($temp_cambio_precio[$b]->productId === $product->skus[$x]->productId){
-                                $temp_cambio_precio[$b]->storeSku->pricing->specialPrice = $product->skus[$x]->storeSku->pricing->specialPrice;
-                                $check_exist_product_cambio_precio = true;
-                                break;
-                            }
-                        }
-                        if($total_cambio_precio === 0 || !$check_exist_product_cambio_precio){
-                            array_push($temp_cambio_precio,$product->skus[$x]);
-                        }
-                        $check_cambio_precio = false;
-                    }
-    	        }
-                if($super_check_cambio_precio){
-                    $archivo->setNombreArchivo('../data/cambio_precio.txt');
-                    $archivo->setContenido(json_encode($temp_cambio_precio));
-                    $archivo->escribir();
-                }
-                if($validar_nuevo_producto){
-                    $archivo->setNombreArchivo('../data/productos_nuevos.txt');
-                    $archivo->setContenido(json_encode($temp_productos_nuevos));
-                    $archivo->escribir();   
-                }
-                if($super_check_cambio_precio == true || $validar_nuevo_producto == true){
-                    
-                    $plantilla_email = new PlantillaEmail();
-                    $body = $plantilla_email->plantillaUno('5','4');
-                    $email = 'residente007@yahoo.es';
-                    $headers = "From: info@admintaxi.com\r\n";
-                    $headers .= "Reply-To: info@admintaxi.com.com\r\n";
-                    $headers .= "MIME-Version: 1.0\r\n";
-                    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-                    $subject = "Algunos productos cambiaron de precios o son nuevos";
-                    //$body = 'Revice los productos <a href="https://bestwayapp.market/applEditor">aquí</a>';
-                    if(mail($email,$subject,$body,$headers)){
-
-                    }
-                }
-            }
-        }
-        //$total_product = 3;
-        if($empezar_de_cero === true){
-            $productos = array();
-            $woo_atribute = $cw->getAtributo();
-            $marcas = $database->getMarcas();
-            for($x=0;$x<$total_product;$x++){ 
-                $nombre_marca = strtoupper(trim($product->skus[$x]->info->brandName));
-                if($nombre_marca === 'SAMSUNG' || $nombre_marca === 'LG ElECTRONICS' ){
-                    $array_img = array();
-                    //condicion para que analice las imagenes de cada producto
-                    $imagen_url = array("src"=>str_replace('<SIZE>','400',$product->skus[$x]->info->imageUrl)); //se declara la variable y el tamaño para la imagen
-                    array_push($array_img, $imagen_url);
-                    if(isset($product->skus[$x]->info->secondaryimageUrl)){ //se verifa la existenia de segunda imagen , si esta que la muestre y sino que lo salte
-                        $imagen_url = array("src"=>str_replace('<SIZE>','400',$product->skus[$x]->info->secondaryimageUrl));
-                        array_push($array_img, $imagen_url); //relacion entre array
-                    }
-                    $originalPrice = $product->skus[$x]->storeSku->pricing->originalPrice;
-                    $specialPrice = $originalPrice;
-                    if(isset($product->skus[$x]->storeSku->pricing->specialPrice)){
-                        $originalPrice = $product->skus[$x]->storeSku->pricing->specialPrice; 
-                        $specialPrice = $originalPrice;
-                    }
-                    $specialPrice = ($specialPrice * 0.85);
-                    //veridica los campos de top
-    	            $topAttributes = $product->skus[$x]->info->topAttributes; //TopAttributes
-    	            $total_topAttributes = count($topAttributes); //se cuenta cuantos modulos tiene topattributes
-    	            $top="<ul>"; //se declara la variable donde se va a guardar el resultado de las iteraciones del for dentro del modulo de Topattributes
-                    $att = array();
-                    $total_wooatributo = count($woo_atribute);
-                    $woo_term = array();
-                    $term = array();
-                    //inicia la comprobación si el atributo existe
-                   	for($i=0;$i<$total_topAttributes;$i++){
-                        $check_atributo = false;
-                        for($j=0;$j<$total_wooatributo;$j++){
-                            if(strtoupper(trim($woo_atribute[$j]->name)) == strtoupper(trim($product->skus[$x]->info->topAttributes[$i]->name))){
-                                $check_atributo = true;
-                                $woo_atributo_term = $cw->getTerminoAtributo($woo_atribute[$j]->id);
-                                $total_woo_atributo_term = count($woo_atributo_term);
-                                //echo 'Total term: '.$total_woo_atributo_term;
-                                $check_term_atributo = false;
-                                //Inicia comprobación si los terminos de atributo existen
-                                if(isset($product->skus[$x]->info->topAttributes[$i]->attributeValues[0]->attributeValue)){
-                                    $valor_atributo = substr(trim($product->skus[$x]->info->topAttributes[$i]->attributeValues[0]->attributeValue),0,28);
-                                    for($k=0;$k<$total_woo_atributo_term;$k++){
-                                        if(strtoupper($woo_atributo_term[$k]->name) === strtoupper($valor_atributo)){
-                                            $term = ["".$valor_atributo];
-                                            $check_term_atributo = true;
-                                            break;
-                                        }
+                            $topAttributes = $product->skus[$x]->info->topAttributes;
+                            $total_topAttributes = count($topAttributes);
+                            $control_wordpress_market->setCollection('atributos');
+                            $control_wordpress_market->conectarMongo();
+                            $att = array();
+                            $value_term = array();
+                            //aquí se verifica los atributos de cada producto
+                            $descripcion = '<ul>';
+                            for($at=0;$at < $total_topAttributes; $at++){
+                                $nombre_atributo = trim("".$topAttributes[$at]->name);
+                                $query = array('name' => $nombre_atributo);
+                                $result = $control_wordpress_market->consultar($query);
+                                $check_atributo = false;
+                                $valor_atributo = '';
+                                foreach ( $result as $atributo_temp){
+                                    $check_atributo = true;
+                                    $wp_atributo_id = $atributo_temp->wp_id;
+                                    $valor_atributo = '-';
+                                    if(isset($topAttributes[$at]->attributeValues[0]->attributeValue)){
+                                        $valor_atributo = "".$topAttributes[$at]->attributeValues[0]->attributeValue;
                                     }
-                                    
-                                    //si no existen el term entonces aquí se crean
-                                    if($check_term_atributo == false){
-                                        $term = [
-                                             "name" => "".$valor_atributo,
-                                        ];
-                                        if(!$cw->setTermAtributo($woo_atribute[$j]->id,$term)){
+                                    $indice = array_search($valor_atributo, (array)$atributo_temp->term);
+                                    //array_search devuelve un false o un número. El siguiente if valida si $indice es un boleano, lo que se asume que es false, de lo contrario $indice sería número
+                                    $term = ['name' => $valor_atributo];
+                                    if(is_bool($indice)){                                
+                                        if(!$cw->setTermAtributo($wp_atributo_id,$term)){
                                             echo "Problemas con guardar Term";
                                             exit();
                                         }
-                                        $term = [
-                                             "".trim($product->skus[$x]->info->topAttributes[$i]->attributeValues[0]->attributeValue),
-                                        ];
+                                        $actualiza = (array)$atributo_temp->term;
+                                        array_push($actualiza, $valor_atributo);
+                                        $actualiza = array('$set'=>array('term' => $actualiza));
+                                        $encuentra = array('name' => $atributo_temp->name);
+                                        $control_wordpress_market->actualizar($encuentra,$actualiza,array('upsert'=>true));
                                     }
-                                    $att[] = [
-                                        "id"=> "".$woo_atribute[$j]->id,
-                                        "options"=> $term
-                                    ];
-
-                                }    
-                                if(isset($product->skus[$x]->info->topAttributes[$i]->attributeValues[0]->attributeValue)){
-                                    $top .= '<li>'.$product->skus[$x]->info->topAttributes[$i]->name.": <strong>".$product->skus[$x]->info->topAttributes[$i]->attributeValues[0]->attributeValue."</strong></li>";
-                                }else{
-                                    $top .= '<li>'.$product->skus[$x]->info->topAttributes[$i]->name.": ";       
+                                    $term = [$valor_atributo];
+                                    $att[] = ["id"=> "".$wp_atributo_id,"options"=> $term];
                                 }
-                                break;
-                            }
-                        }
-                        //aqui identifica que el atributo no existe y lo crea
-                        if($check_atributo === false){
-                            $att_new = [
-                                "name"=> "".trim($product->skus[$x]->info->topAttributes[$i]->name)
-                            ];
-                            
-                            if(isset($product->skus[$x]->info->topAttributes[$i]->attributeValues[0]->attributeValue)){
-                                $term = ["name" => "".trim($product->skus[$x]->info->topAttributes[$i]->attributeValues[0]->attributeValue),];          
-                            }else{
-                                $term = ["name" => "-"];   
-                            }
-                            if($cw->setAtributo($att_new)){
-
-                                if(!$cw->setTermAtributo($cw->getIdAtributo(),$term)){
-                                        echo "Problemas con guardar Term con Atributo";
+                                //el siguiente if crea un atributo en caso no exista
+                                if(!$check_atributo){
+                                    if($cw->setAtributo(array("name"=> substr($nombre_atributo,0,28)))){
+                                        $wp_atributo_id = $cw->getIdAtributo();
+                                        $valor_atributo = '-';
+                                        if(isset($topAttributes[$at]->attributeValues[0]->attributeValue)){
+                                            $valor_atributo = "".$topAttributes[$at]->attributeValues[0]->attributeValue;
+                                            $term = [
+                                               "name" =>$valor_atributo,
+                                            ];
+                                        }
+                                        $term = ['name' => $valor_atributo];
+                                        if(!$cw->setTermAtributo($wp_atributo_id,$term)){
+                                            echo "Problemas con guardar Term";
+                                            exit();
+                                        }
+                                        $term = [$valor_atributo];
+                                        $att[] = ["id"=> "".$wp_atributo_id,"options"=> $term];
+                                        $actualiza = array('$set' => array('term' => $term, 'wp_id' => $wp_atributo_id));
+                                        $encuentra = array('name' => $nombre_atributo);
+                                        $control_wordpress_market->actualizar($encuentra,$actualiza,array('upsert' => true));
+                                    }else{
+                                        echo '500 No se guardó el atributo';
                                         exit();
                                     }
-                                $woo_atribute = $cw->getAtributo();
-                            }else{
-                                echo "Problemas con guardar Atributo";
-                                exit();
+                                }
+                                $descripcion .= '<li>'.$nombre_atributo.": <strong>".$valor_atributo."</strong></li>";
                             }
-                            if(isset($product->skus[$x]->info->topAttributes[$i]->attributeValues[0]->attributeValue)){
-                                $term = ["".trim($product->skus[$x]->info->topAttributes[$i]->attributeValues[0]->attributeValue),];
-                                    $att[] = [
-                                    "id"=> $cw->getIdAtributo(),
-                                    "options"=> $term
+                            $descripcion .= '</ul>';
+                            //preparamos para insertar producto
+                            $array_img = array();
+                            //condicion para que analice las imagenes de cada producto
+                            $imagen_url = array("src"=>str_replace('<SIZE>','400',$product->skus[$x]->info->imageUrl)); //se declara la variable y el tamaño para la imagen
+                            array_push($array_img, $imagen_url);
+                            if(isset($product->skus[$x]->info->secondaryimageUrl)){ //se verifa la existenia de segunda imagen , si esta que la muestre y sino que lo salte
+                                $imagen_url = array("src"=>str_replace('<SIZE>','400',$product->skus[$x]->info->secondaryimageUrl));
+                                array_push($array_img, $imagen_url); //relacion entre array
+                            }
+                            $producto = array(); //array por cada product
+                            $nombre_producto = $product->skus[$x]->info->brandName.' '.$product->skus[$x]->info->productLabel;
+                            
+                            if(isset($product->skus[$x]->info->storeSkuNumber)){
+                                $producto = [
+                                'display'=> $product->skus[$x]->info->brandName,
+                                'name' => $nombre_producto,
+                                'type' => 'simple',
+                                'price'=> "".$precio,
+                                'regular_price'=> "".$precio,
+                                'sale_price'=> "".($precio * 0.85),
+                                'description' => $descripcion,
+                                'short_description' => $descripcion,
+                                'sku' => "".$product->skus[$x]->info->storeSkuNumber,
+                                'categories' => [
+                                    [
+                                      'id' => $product->metadata->categoryID,
+                                    ],
+                                 ],
+                                 'attributes' => $att,
+                                 'images' => $array_img,
+                                ];
+                            }else{
+                                $producto = [
+                                'display'=> $product->skus[$x]->info->brandName,
+                                'name' => $nombre_producto,
+                                'type' => 'simple',
+                                'price'=> "".$precio,
+                                'regular_price'=> "".$precio,
+                                'sale_price'=> "".($precio * 0.85),
+                                'description' => $descripcion,
+                                'short_description' => $descripcion,
+                                'categories' => [
+                                    [
+                                      'id' => $product->metadata->categoryID,
+                                    ],
+                                 ],
+                                 'attributes' => $att,
+                                 'images' => $array_img,
                                 ];
                             }
-                        }   
-                    }
-                    $top .= "</ul>";
-                    $total_marca = count($marcas);
-                    $check_marca = false;
-                    for($l =0; $l<$total_marca;$l++){
-                    	if($marcas[$l]->name == $product->skus[$x]->info->brandName){
-                    		$id_marca = $marcas[$l]->term_id;
-                    		$check_marca = true;
-                    		break;
-                    	}	
-                    }
-                    //print_r($marca[0]['id']);
-                    if($check_marca === false){
-                    	$database->crearMarca($product->skus[$x]->info->brandName);
-                    	$id_marca = $database->getIdMarca();
-                        $marcas = $database->getMarcas(); 
-                    }
-                    $producto = array(); //array por cada product
-                    if(isset($product->skus[$x]->info->storeSkuNumber)){
-                        $producto = [
-                        'display'=> $product->skus[$x]->info->brandName,
-                        'name' => $product->skus[$x]->info->productLabel,
-                        'type' => 'simple',
-                        'price'=> "".$originalPrice,
-                        'regular_price'=> "".$originalPrice,
-                        'sale_price'=> "".$specialPrice,
-                        'description' => $top,
-                        'short_description' => $top,
-                        'sku' => "".$product->skus[$x]->info->storeSkuNumber,
-                        'categories' => [
-                            [
-                              'id' => $product->metadata->categoryID,
-                            ],
-                         ],
-                         'attributes' => $att,
-                         'images' => $array_img,
-                        ];
-                    }else{
-                        $producto = [
-                        'display'=> $product->skus[$x]->info->brandName,
-                        'name' => $product->skus[$x]->info->productLabel,
-                        'type' => 'simple',
-                        'price'=> "".$originalPrice,
-                        'regular_price'=> "".$originalPrice,
-                        'sale_price'=> "".$specialPrice,
-                        'description' => $top,
-                        'short_description' => $top,
-                        'categories' => [
-                            [
-                              'id' => $product->metadata->categoryID,
-                            ],
-                         ],
-                         'attributes' => $att,
-                         'images' => $array_img,
-                        ];
-                    }
-    	            if(!$cw->send($producto)){
-                        $check = false;
-                        break;
-                    }else{
-                    	$id_product =  $cw->getIdProduct();
-                    	@$product->skus[$x]->woocomerce_id = $id_product;
-                        $database->relacionProductoMarca($id_product,$id_marca);
-                        if($lee_archivo == false){
-                            array_push($productos, $product->skus[$x]);
-                        }else{
-                            array_push($data_temp_full->skus, $product->skus[$x]);
+                            if(!$cw->send($producto)){
+                                $check = false;
+                                break;
+                            }else{
+                                $id_product =  $cw->getIdProduct();
+                                @$product->skus[$x]->id_universal = $nombre_marca.$product->skus[$x]->modelNumber;
+                                $unidad = [$product->skus[$x]];
+                                $_id = $control_mongo->insertarDatos($unidad);
+                                $_id = $_id->getInsertedId();
+                                $control_mongo->setCollection('tiendas_productos');
+                                $control_mongo->conectarMongo();
+                                $unidad = [['tienda' => 'homedepot','bodega_id' => $_id, 'producto_id' => $product->skus[$x]->productId]];
+                                $control_mongo->insertarDatos($unidad);
+                                @$producto['wp_id'] = $id_product;
+                                @$producto['bodega_id'] = $_id;
+                                @$product->skus[$x]->woocomerce_id = $id_product;
+                                $database->relacionProductoMarca($id_product,$id_marca);
+                            }
+                            $productos_wordpress[] = $producto; 
                         }
                     }
-                    //array_push($productos, $producto);
-                }
-                if($lee_archivo == false){
-                    $archivo->setContenido(json_encode($product));
-                    $archivo->escribir();
-                }else{
-                    $archivo->setContenido(json_encode($data_temp_full));
-                    $archivo->escribir();
                 }
             }
-        }
+            if(count($productos_wordpress)!= 0){
+                $control_wordpress_market->setCollection('productos');
+                $control_wordpress_market->conectarMongo();
+                $control_wordpress_market->insertarDatos($productos_wordpress);
+            }
+        }      
         return $check;
     }
 }

@@ -51,7 +51,7 @@ class ConexionBaseDeDatos{
 		$sql = "INSERT INTO ".$this->t_marca." (".$campos_inserccion.") VALUES (".$valores_campos_inserccion.")";
 		$handle = mysqli_query($this->link,$sql);
 		if($handle){
-		    $msg = "Contrato guardado. Puede proceder a generar un archivo PDF.";
+		    $msg = "Marca guardada.";
 		    $tipo_msg = "success";
 		    $id_term = mysqli_insert_id($this->link);
 		    $this->id_marca = $id_term; 
