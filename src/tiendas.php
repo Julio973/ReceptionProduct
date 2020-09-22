@@ -11,7 +11,7 @@ class Tienda{
         $check = true;
         $archivo = '';
         $data_temp = '';
-        $empezar_de_cero = true;
+        $empezar_de_cero = false;
         $archivo_cambio_precio = '';
         $control_mongo = new Controlador('mongodb');
         $control_auxiliar = new Controlador('mongodb');
@@ -22,6 +22,14 @@ class Tienda{
         $productos_wordpress = array();
         $total_productos = count($product->skus);
         if($empezar_de_cero === false){
+            /*$control_mongo->setCollection('productos_cambio_precios');
+            $control_mongo->conectarMongo();
+            $result = $control_mongo->consultar();
+            foreach ( $result as $test){
+                echo 'cambio-precio: '.$test->info->productLabel;
+            }
+            $control_mongo->eliminarCollection();
+            exit()*/
             $total_productos_recividos = 0;
             $total_productos_recividos = count($product->skus);
             $array_producto_nuevo = array();
@@ -75,8 +83,8 @@ class Tienda{
                                 $encuentra = array('productId' => $product->skus[$x]->productId);
                                 $control_mongo->actualizar($encuentra,$actualiza);
                             }else{
-                                @$product->skus[$x]->estado = 'pendiente';
-                                $control_mongo->insertarDatos([$product->skus[$x]]);
+                                @$product_temp->estado = 'pendiente';
+                                $control_mongo->insertarDatos([$product_temp]);
                             }
                             $total_cambio_de_precio++;
                         }
@@ -328,6 +336,7 @@ class Tienda{
                             }else{
                                 $id_product =  $cw->getIdProduct();
                                 @$product->skus[$x]->id_universal = $nombre_marca.$product->skus[$x]->modelNumber;
+                                @$product->skus[$x]->woocomerce_id = $id_product;
                                 $unidad = [$product->skus[$x]];
                                 $_id = $control_mongo->insertarDatos($unidad);
                                 $_id = $_id->getInsertedId();
@@ -337,7 +346,6 @@ class Tienda{
                                 $control_mongo->insertarDatos($unidad);
                                 @$producto['wp_id'] = $id_product;
                                 @$producto['bodega_id'] = $_id;
-                                @$product->skus[$x]->woocomerce_id = $id_product;
                                 $database->relacionProductoMarca($id_product,$id_marca);
                             }
                             $productos_wordpress[] = $producto; 
