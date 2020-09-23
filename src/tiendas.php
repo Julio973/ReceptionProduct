@@ -336,7 +336,7 @@ class Tienda{
                             }else{
                                 $id_product =  $cw->getIdProduct();
                                 @$product->skus[$x]->id_universal = $nombre_marca.$product->skus[$x]->modelNumber;
-                                @$product->skus[$x]->woocomerce_id = $id_product;
+                                @$product->skus[$x]->woocomerce_id = "".$id_product;
                                 $unidad = [$product->skus[$x]];
                                 $_id = $control_mongo->insertarDatos($unidad);
                                 $_id = $_id->getInsertedId();
@@ -344,7 +344,7 @@ class Tienda{
                                 $control_mongo->conectarMongo();
                                 $unidad = [['tienda' => 'homedepot','bodega_id' => $_id, 'producto_id' => $product->skus[$x]->productId]];
                                 $control_mongo->insertarDatos($unidad);
-                                @$producto['wp_id'] = $id_product;
+                                @$producto['wp_id'] = "".$id_product;
                                 @$producto['bodega_id'] = $_id;
                                 $database->relacionProductoMarca($id_product,$id_marca);
                             }
