@@ -4,7 +4,7 @@ include '../src/dbmodel.php';
 $usuario  = $_POST["usuario"];
 $password = $_POST["password"];
 $database = new ConexionBaseDeDatos();
-$database->setDatabase("receptionproduct_bswapp");
+$database->setDatabase("receptionproduct_bswayapp");
 $link = $database->conectar();
 if($database->signIn($usuario,$password))
 {
