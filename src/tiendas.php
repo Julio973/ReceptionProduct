@@ -7,6 +7,7 @@ class Tienda{
         $cw = new Connectwoo();
         $database = new ConexionBaseDeDatos();
         $database->setDataBase('wp_prueba');
+        //$database->setDataBase('dzf443548506536');
         $database->conectarWoo();
         $check = true;
         $archivo = '';
@@ -68,8 +69,9 @@ class Tienda{
                         if(isset($product_temp->storeSku->pricing->specialPrice)){
                             $precio_temp = $product_temp->storeSku->pricing->specialPrice;
                         }
-                        //echo $precio.' * '.$precio_temp;
+                        //echo 'x='.$x.' '.$precio.' * '.$precio_temp.'<br>';
                         if($precio != $precio_temp){   
+                            echo ' x: '.$x.' '.$product->skus[$x]->info->storeSkuNumber.' precio: '.$product->skus[$x]->storeSku->pricing->specialPrice.' preciotemp: '.$product_temp->storeSku->pricing->specialPrice.'<br>';
                             $control_mongo->setCollection('productos_cambio_precios');
                             $control_mongo->conectarMongo();
                             $query = array('productId' => $product->skus[$x]->productId);
@@ -83,6 +85,7 @@ class Tienda{
                                 $encuentra = array('productId' => $product->skus[$x]->productId);
                                 $control_mongo->actualizar($encuentra,$actualiza);
                             }else{
+                                @$product_temp->storeSku->pricing->specialPrice = $precio;
                                 @$product_temp->estado = 'pendiente';
                                 $control_mongo->insertarDatos([$product_temp]);
                             }
@@ -334,9 +337,9 @@ class Tienda{
                                 $check = false;
                                 break;
                             }else{
-                                $id_product =  $cw->getIdProduct();
-                                @$product->skus[$x]->id_universal = $nombre_marca.$product->skus[$x]->modelNumber;
-                                @$product->skus[$x]->woocomerce_id = "".$id_product;
+                                $id_product =  "".$cw->getIdProduct();
+                                @$product->skus[$x]->id_universal = $nombre_marca.$product->skus[$x]->info->modelNumber;
+                                @$product->skus[$x]->woocomerce_id = $id_product;
                                 $unidad = [$product->skus[$x]];
                                 $_id = $control_mongo->insertarDatos($unidad);
                                 $_id = $_id->getInsertedId();
@@ -344,8 +347,8 @@ class Tienda{
                                 $control_mongo->conectarMongo();
                                 $unidad = [['tienda' => 'homedepot','bodega_id' => $_id, 'producto_id' => $product->skus[$x]->productId]];
                                 $control_mongo->insertarDatos($unidad);
-                                @$producto['wp_id'] = "".$id_product;
-                                @$producto['bodega_id'] = $_id;
+                                $producto["wp_id"] = $id_product;
+                                $product->bodega_id = $_id;
                                 $database->relacionProductoMarca($id_product,$id_marca);
                             }
                             $productos_wordpress[] = $producto; 
