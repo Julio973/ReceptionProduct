@@ -35,7 +35,7 @@ $rp = new ReceptionProduct();
 if(file_get_contents('php://input') !== ''){
     $data = file_get_contents('php://input'); //atrapa desde postman 
     $data = json_decode($data);
-    $key_secury = $data->key_secury;
+    $key_secury = $data->token;
     $control = new Controlador('mysql');
     
     if($control->signIn($key_secury)){

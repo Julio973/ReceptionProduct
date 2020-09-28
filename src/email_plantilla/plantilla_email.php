@@ -1,6 +1,16 @@
 <?php
 class PlantillaEmail{
 	function plantillaUno($cambios,$nuevos){
+		$condicional = '';
+		if($nuevos > 0){
+			$condicional = $nuevos.' new products';
+		}
+		if($cambios > 0 && $nuevos > 0){
+			$condicional .= ' and ';
+		}
+		if($cambios > 0 ){
+			$condicional .= $cambios.' price changes';
+		}
 		$html = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional //EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:v="urn:schemas-microsoft-com:vml">
@@ -241,7 +251,7 @@ class PlantillaEmail{
 <!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 50px; padding-left: 50px; padding-top: 10px; padding-bottom: 10px; font-family: Arial, sans-serif"><![endif]-->
 <div style="color:#ffffff;font-family:Poppins, Arial, Helvetica, sans-serif;line-height:1.2;padding-top:10px;padding-right:50px;padding-bottom:10px;padding-left:50px;">
 <div style="line-height: 1.2; font-size: 12px; color: #ffffff; font-family: Poppins, Arial, Helvetica, sans-serif; mso-line-height-alt: 14px;">
-<p style="font-size: 28px; line-height: 1.2; word-break: break-word; text-align: center; mso-line-height-alt: 34px; margin: 0;"><span style="font-size: 28px;">Our system has detected new products, and/or price changes, clic the link below to verify them</span></p>
+<p style="font-size: 28px; line-height: 1.2; word-break: break-word; text-align: center; mso-line-height-alt: 34px; margin: 0;"><span style="font-size: 28px;">Our system has detected '.$condicional.', clic the link below to verify them</span></p>
 </div>
 </div>
 <!--[if mso]></td></tr></table><![endif]-->

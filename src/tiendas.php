@@ -2,12 +2,14 @@
 include_once ('controlador.php');
 include('connectwoo.php');
 include_once('dbmodel.php');
+include ('email_plantilla/plantilla_email.php');
 class Tienda{
     function homeDepot($product){
         $cw = new Connectwoo();
         $database = new ConexionBaseDeDatos();
         $database->setDataBase('wp_prueba');
         //$database->setDataBase('dzf443548506536');
+        $notificacion = new PlantillaEmail();
         $database->conectarWoo();
         $check = true;
         $archivo = '';
@@ -112,17 +114,19 @@ class Tienda{
                     }
                 }
             }
-            $contenido_novedad = '';
-            if($total_cambio_de_precio > 0){
-                $contenido_novedad.= $total_cambio_de_precio.' productos cambiarón de precio<br>';
-            }
             $total_producto_nuevo = count($array_producto_nuevo);
-            if( $total_producto_nuevo > 0){
-                $contenido_novedad.= ' '.$total_producto_nuevo.' nuevos fueron detectados<br>';
-                $control_mongo->setCollection('productos_nuevos');
-                $control_mongo->conectarMongo();  
-                $control_mongo->setDatos($array_producto_nuevo);
-                $control_mongo->insertarDatos();
+            if($total_cambio_de_precio > 0 || $total_producto_nuevo > 0){
+                if( $total_producto_nuevo > 0){
+                    $control_mongo->setCollection('productos_nuevos');
+                    $control_mongo->conectarMongo();  
+                    $control_mongo->setDatos($array_producto_nuevo);
+                    $control_mongo->insertarDatos();
+                }
+                $para = 'residente007@yahoo.es';
+                $asunto = 'Sometime products changes';
+                $body = $notificacion->plantillaUno($total_cambio_de_precio, $total_producto_nuevo);
+                $header = 'From: julio.herazo@admintaxi.com';
+                mail($para, $asunto, $body,$header);
             }  
         }else{
             $control_wordpress_market->setDataBaseMongo('wp_market');
