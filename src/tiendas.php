@@ -153,6 +153,10 @@ class Tienda{
             $control_wordpress_market->eliminarCollection();
             $control_wordpress_market->setCollection('atributos');
             $control_wordpress_market->conectarMongo();
+            $result = $control_wordpress_market->consultar();
+            foreach ( $result as $test){
+                echo 'atributo: '.$test->name.' id:'.$test->wp_id;
+            }
             $control_wordpress_market->eliminarCollection();
             $control_mongo->setCollection('productos');
             $control_mongo->conectarMongo();

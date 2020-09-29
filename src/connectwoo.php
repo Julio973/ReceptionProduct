@@ -11,8 +11,8 @@ class Connectwoo{
     private $id_term_atributo ="";
     function credencialToWoo(){
         $url = 'http://localhost/dev/wordpress/wp-prueba/';
-        $clave_publica = 'ck_78c385f849c2b5da52cb416b8f61f70553c8f06c';
-        $clave_privada = 'cs_9f10c6847ed3e26e1235fe8a69ab69ca9f1169b7';
+        $clave_publica = 'ck_57b29457153284daf48d9b5b5a95f8dc52a7f7cf';
+        $clave_privada = 'cs_3d806288847f048940f31a70ed7cf5d23bc2a114';
        /* $url = 'http://localhost/pruebapaginawordpres/';
         $clave_publica = 'ck_0d5fef5c02ca4fc8c94362a8be12e5fe794d8c71';
         $clave_privada = 'cs_e697b042675b891fde23587d140b8ee3683fbec6';*/
