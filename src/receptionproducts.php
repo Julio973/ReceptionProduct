@@ -50,6 +50,23 @@ class ReceptionProduct{
        }
        return json_encode($productos);
     }
+    function getNewProduct($array = null){
+       $control_mongo = new Controlador('mongodb'); 
+       $control_mongo->setDataBaseMongo('bodega');
+       $control_mongo->setCollection('productos_nuevos');
+       $control_mongo->conectarMongo();
+       $result = array();
+       if($array === null){
+          $result = $control_mongo->consultar();       
+       }else{
+          $result = $control_mongo->consultar($array);
+       }
+       $productos = array();
+       foreach ( $result as $temp){
+          $productos[] = $temp;
+       }
+       return json_encode($productos);
+    }
     function discard(String $wp_id){
        $check = false;
        $control_mongo = new Controlador('mongodb'); 

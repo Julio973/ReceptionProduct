@@ -25,14 +25,19 @@ class Tienda{
         $productos_wordpress = array();
         $total_productos = count($product->skus);
         if($empezar_de_cero === false){
-            /*$control_mongo->setCollection('productos_cambio_precios');
+            /*
+            $control_mongo->setCollection('productos_nuevos');
             $control_mongo->conectarMongo();
-            $result = $control_mongo->consultar();
+            $result = $control_mongo->consultar(['productId' => '206944035']);
             foreach ( $result as $test){
-                echo 'cambio-precio: '.$test->info->productLabel;
+                echo 'cambio-precio: '.$test->info->productLabel.'<br>';
             }
-            $control_mongo->eliminarCollection();
-            exit()*/
+            $control_mongo->eliminarCollection(['productId' => '206944035']);
+            $control_mongo->setCollection('tiendas_productos');
+                    $control_mongo->conectarMongo();
+                    $query = array('$and' => array(array('producto_id' => '206944035'),array('tienda' => 'homedepot')));
+                    $control_mongo->eliminarCollection(['producto_id' => '206944035']);
+            exit();*/
             $total_productos_recividos = 0;
             $total_productos_recividos = count($product->skus);
             $array_producto_nuevo = array();

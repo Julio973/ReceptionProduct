@@ -9,9 +9,9 @@ if(isset($_GET['token'])){
       if(file_get_contents('php://input') !== ''){
         $data = file_get_contents('php://input'); //atrapa desde postman 
         $data = json_decode($data);
-        $rp->setNewPrice($data);
+        $rp->setNewProduct($data);
       }else{
-        echo $rp->getChangedPrice();
+        echo $rp->getNewProduct();
       }
     }else{
         echo 'No Authorized';
