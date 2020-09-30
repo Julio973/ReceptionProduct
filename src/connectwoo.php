@@ -116,6 +116,23 @@ class Connectwoo{
         }
         return $check;
     }
- }
+    function updatePrices(array $prices){
+        $check = false;
+        try{
+            $this->credencialToWoo();
+            $products = $this->woocommerce->post('products/batch', $prices);
+            $check = true;
+        }catch(WC_API_Client_Exception $e){
+            $check = false;
+            //echo $e->getMessage() . PHP_EOL;
+            //echo $e->getCode() . PHP_EOL;
 
+            if ( $e instanceof WC_API_Client_HTTP_Exception ) {
+               // print_r( $e->get_request() );
+               // print_r( $e->get_response() );
+            }
+        }
+        return $check;
+    }
+ }
 ?>

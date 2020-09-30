@@ -1,16 +1,17 @@
 <?php
-include("../../src/receptionproducts.php");
-include_once '../../src/controlador.php'; 
+include("../../../src/receptionproducts.php");
+include_once '../../../src/controlador.php'; 
 
 if(isset($_GET['token'])){
     $token = $_GET['token'];
     $control = new Controlador('mysql');
     if($control->signIn($token)){
        $rp = new ReceptionProduct();
+       $wp_id = $_GET['wp_id'];
        //echo $rp->getChangedPrice();
        //exit();
        //$update = [array('id'=> '5687','sale_price' =>'555','regular_price'=>'655'),array('id'=> '5693','sale_price' =>'540','regular_price'=>'590')];
-       echo $rp->setNewPrice($update);
+       $rp->discard($wp_id);
        //echo $rp->getChangedPrice();
     }else{
         echo 'No Authorized';

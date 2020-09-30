@@ -48,11 +48,41 @@ class ReceptionProduct{
        foreach ( $result as $temp){
           $productos[] = $temp;
        }
-       echo json_encode($productos);
+       return json_encode($productos);
     }
-    /*function setNewPrice(Integer){
-
-    }*/
+    function discard(String $wp_id){
+       $check = false;
+       $control_mongo = new Controlador('mongodb'); 
+       $control_mongo->setDataBaseMongo('bodega');
+       $control_mongo->setCollection('productos_cambio_precios');
+       $control_mongo->conectarMongo();
+       $encuentra = array('woocomerce_id' => $wp_id);
+       $control_mongo->eliminarCollection($encuentra);
+       return $check;
+    }
+    function setNewPrice(array $datos){
+        $manager = ['update' => $datos];
+        $check = $this->cw->updatePrices($manager);
+        if($check){
+            $control_market = new Controlador('mongodb');
+            $control_market->setDataBaseMongo('wp_market');
+            $control_market->setCollection('productos');
+            $control_market->conectarMongo();
+            $control_mongo = new Controlador('mongodb'); 
+            $control_mongo->setDataBaseMongo('bodega');
+            $control_mongo->setCollection('productos_cambio_precios');
+            $control_mongo->conectarMongo();
+            $total_cambios = count($datos);
+            for($x =0;$x < $total_cambios; $x++){
+                $encuentra = array('wp_id' => $datos[$x]['id']);
+                $data = ['sale_price' => $datos[$x]['sale_price'],'regular_price' => $datos[$x]['regular_price']];
+                $actualiza = array('$set'=> $data);
+                $control_market->actualizar($encuentra,$actualiza);
+                $encuentra = array('woocomerce_id' => $datos[$x]['id']);
+                $control_mongo->eliminarCollection($encuentra);
+            }
+        }
+    }
     function getCategoria(){
         $categoria = array();
         $cat = array();
