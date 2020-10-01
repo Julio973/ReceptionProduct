@@ -4,7 +4,7 @@ include('connectwoo.php');
 include_once('dbmodel.php');
 include ('email_plantilla/plantilla_email.php');
 class Tienda{
-    function homeDepot($product){
+    function homeDepot($product,bool $emp_de_cero = false,String $clear = ''){
         $cw = new Connectwoo();
         $database = new ConexionBaseDeDatos();
         $database->setDataBase('wp_prueba');
@@ -14,7 +14,7 @@ class Tienda{
         $check = true;
         $archivo = '';
         $data_temp = '';
-        $empezar_de_cero = false;
+        $empezar_de_cero = $emp_de_cero;
         $archivo_cambio_precio = '';
         $control_mongo = new Controlador('mongodb');
         $control_auxiliar = new Controlador('mongodb');
@@ -24,19 +24,25 @@ class Tienda{
         $control_mongo->conectarMongo();
         $productos_wordpress = array();
         $total_productos = count($product->skus);
-        if($empezar_de_cero === false){
+        if($empezar_de_cero === false){ 
             /*
+            $buscar = ['productId' => '206944035'];
+            $result = $control_mongo->consultar($buscar);
+            foreach ( $result as $test){
+                echo 'producto: '.$test->info->productLabel.'<br>';
+            }
+            $control_mongo->eliminarCollection($buscar);
             $control_mongo->setCollection('productos_nuevos');
             $control_mongo->conectarMongo();
-            $result = $control_mongo->consultar(['productId' => '206944035']);
+            $result = $control_mongo->consultar();
             foreach ( $result as $test){
-                echo 'cambio-precio: '.$test->info->productLabel.'<br>';
+                echo 'producto nuevo: '.$test->info->productLabel.'<br>';
             }
-            $control_mongo->eliminarCollection(['productId' => '206944035']);
+            $control_mongo->eliminarCollection($buscar);
             $control_mongo->setCollection('tiendas_productos');
                     $control_mongo->conectarMongo();
                     $query = array('$and' => array(array('producto_id' => '206944035'),array('tienda' => 'homedepot')));
-                    $control_mongo->eliminarCollection(['producto_id' => '206944035']);
+                    $control_mongo->eliminarCollection($query);
             exit();*/
             $total_productos_recividos = 0;
             $total_productos_recividos = count($product->skus);
@@ -147,51 +153,53 @@ class Tienda{
                 //echo $marca_temp->name.': ['.implode(',',(array)$marca_temp->term).'], ';
                 echo $marca_temp->producto_id.', ';
             }*/
-            /*
-            $control_wordpress_market->eliminarCollection();
-            $control_wordpress_market->setCollection('marcas');
-            $control_wordpress_market->conectarMongo();
-            $result = $control_wordpress_market->consultar();
-            foreach ( $result as $test){
-                echo 'marcas : '.$test->brandName;
+            if($clear === 'empty'){
+        
+                $control_wordpress_market->eliminarCollection();
+                $control_wordpress_market->setCollection('marcas');
+                $control_wordpress_market->conectarMongo();
+                $result = $control_wordpress_market->consultar();
+                foreach ( $result as $test){
+                    echo 'marcas : '.$test->brandName;
+                }
+                $control_wordpress_market->eliminarCollection();
+                $control_wordpress_market->setCollection('atributos');
+                $control_wordpress_market->conectarMongo();
+                $result = $control_wordpress_market->consultar();
+                foreach ( $result as $test){
+                    echo 'atributo: '.$test->name.' id:'.$test->wp_id;
+                }
+                $control_wordpress_market->eliminarCollection();
+                $control_mongo->setCollection('productos');
+                $control_mongo->conectarMongo();
+                $result = $control_mongo->consultar();
+                foreach ( $result as $test){
+                    echo 'bodega: '.$test->productId;
+                }
+                $control_mongo->eliminarCollection();
+                $control_mongo->setCollection('tiendas_productos');
+                $control_mongo->conectarMongo();
+                $result = $control_mongo->consultar();
+                foreach ( $result as $test){
+                    echo 'tien-prod: '.$test->tienda;
+                }
+                $control_mongo->eliminarCollection();
+                $control_mongo->setCollection('productos_cambio_precios');
+                $control_mongo->conectarMongo();
+                $result = $control_mongo->consultar();
+                foreach ( $result as $test){
+                    echo 'cambio-precio: '.$test->info->productLabel;
+                }
+                $control_mongo->eliminarCollection();
+                $control_mongo->setCollection('productos_nuevos');
+                $control_mongo->conectarMongo();
+                $result = $control_mongo->consultar();
+                foreach ( $result as $test){
+                    echo 'Producto Nuevo'.$test->info->productLabel;
+                }
+                $control_mongo->eliminarCollection();
+                exit();
             }
-            $control_wordpress_market->eliminarCollection();
-            $control_wordpress_market->setCollection('atributos');
-            $control_wordpress_market->conectarMongo();
-            $result = $control_wordpress_market->consultar();
-            foreach ( $result as $test){
-                echo 'atributo: '.$test->name.' id:'.$test->wp_id;
-            }
-            $control_wordpress_market->eliminarCollection();
-            $control_mongo->setCollection('productos');
-            $control_mongo->conectarMongo();
-            $result = $control_mongo->consultar();
-            foreach ( $result as $test){
-                echo 'bodega: '.$test->productId;
-            }
-            $control_mongo->eliminarCollection();
-            $control_mongo->setCollection('tiendas_productos');
-            $control_mongo->conectarMongo();
-            $result = $control_mongo->consultar();
-            foreach ( $result as $test){
-                echo 'tien-prod: '.$test->tienda;
-            }
-            $control_mongo->eliminarCollection();
-            $control_mongo->setCollection('productos_cambio_precios');
-            $control_mongo->conectarMongo();
-            $result = $control_mongo->consultar();
-            foreach ( $result as $test){
-                echo 'cambio-precio: '.$test->info->productLabel;
-            }
-            $control_mongo->eliminarCollection();
-            $control_mongo->setCollection('productos_nuevos');
-            $control_mongo->conectarMongo();
-            $result = $control_mongo->consultar();
-            foreach ( $result as $test){
-                echo 'Producto Nuevo'.$test->info->productLabel;
-            }
-            $control_mongo->eliminarCollection();
-            exit();*/
             for($x=0;$x<$total_productos;$x++){
                 $control_mongo->setCollection('tiendas_productos');
                 $control_mongo->conectarMongo();
@@ -204,7 +212,17 @@ class Tienda{
                 if(!$check_repetido){
                     $control_mongo->setCollection('productos');
                     $control_mongo->conectarMongo();
-                    @$product->skus[$x]->categoryID = $product->metadata->categoryID;
+                    $id_categoria = '';
+                    if(isset($product->skus[$x]->_id)){
+                        unset($product->skus[$x]->_id);
+                        //$product->skus[$x] = array_values($product->skus[$x]);
+                    }
+                    if(isset($product->metadata->categoryID)){
+                        $id_categoria = $product->metadata->categoryID;
+                        @$product->skus[$x]->categoryID = $id_categoria;
+                    }else{
+                        $id_categoria = $product->skus[$x]->categoryID;
+                    }
                     $control_wordpress_market->setCollection('marcas');
                     $control_wordpress_market->conectarMongo();
                     if(isset($product->skus[$x]->info->brandName)){
@@ -321,7 +339,7 @@ class Tienda{
                                 'sku' => "".$product->skus[$x]->info->storeSkuNumber,
                                 'categories' => [
                                     [
-                                      'id' => $product->metadata->categoryID,
+                                      'id' => $id_categoria,
                                     ],
                                  ],
                                  'attributes' => $att,
@@ -339,7 +357,7 @@ class Tienda{
                                 'short_description' => $descripcion,
                                 'categories' => [
                                     [
-                                      'id' => $product->metadata->categoryID,
+                                      'id' => $id_categoria,
                                     ],
                                  ],
                                  'attributes' => $att,

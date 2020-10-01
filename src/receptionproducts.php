@@ -17,9 +17,8 @@ class ReceptionProduct{
         }
     function processData(){
         $tienda = new Tienda();
-        $listproduct2 = Array();
         $listproduct = $this->data;
-        $check = $tienda->homeDepot($listproduct);  
+        $check = $tienda->homeDepot($listproduct,false);  
         if($check == true){
             echo '201 Created';
         }else{
@@ -34,7 +33,11 @@ class ReceptionProduct{
         return json_encode($cw->getProduct());
     }
     function getChangedPrice($array = null){
-       $control_mongo = new Controlador('mongodb'); 
+       $control_market = new Controlador('mongodb');
+       $control_market->setDataBaseMongo('wp_market');
+       $control_market->setCollection('productos');
+       $control_market->conectarMongo();
+       $control_mongo = new Controlador('mongodb');
        $control_mongo->setDataBaseMongo('bodega');
        $control_mongo->setCollection('productos_cambio_precios');
        $control_mongo->conectarMongo();
@@ -45,7 +48,12 @@ class ReceptionProduct{
           $result = $control_mongo->consultar($array);
        }
        $productos = array();
+       $cont = 0;
        foreach ( $result as $temp){
+          $result2 = $control_market->consultar(['wp_id' => $temp->woocomerce_id]);
+          foreach ( $result2 as $temp2){
+            @$temp->sale_price = $temp2->sale_price;
+          }
           $productos[] = $temp;
        }
        return json_encode($productos);
@@ -67,7 +75,29 @@ class ReceptionProduct{
        }
        return json_encode($productos);
     }
-    function discard(String $wp_id){
+    function setNewProduct(array $productos){ 
+        
+        $listproduct = (Object)array('skus' => array());
+        $listproduct->skus = $productos;
+        $tienda = new Tienda();
+        $check = $tienda->homeDepot($listproduct,true);
+        if($check){
+          $control_mongo = new Controlador('mongodb');
+          $control_mongo->setDataBaseMongo('bodega');
+          $control_mongo->setCollection('productos_nuevos');
+          $control_mongo->conectarMongo();
+          $total_productos = count($productos);
+          for($x=0;$x < $total_productos; $x++){
+            $query = array('productId'=>$productos[$x]->productId);
+            $control_mongo->eliminarCollection($query);
+          }
+          echo '201 Created';
+        }else{
+            echo '400 Bad Request';
+        }
+        return $check;
+    }
+    function discardChangePrice(String $wp_id){
        $check = false;
        $control_mongo = new Controlador('mongodb'); 
        $control_mongo->setDataBaseMongo('bodega');

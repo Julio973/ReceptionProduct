@@ -11,7 +11,7 @@ if(isset($_GET['token'])){
        //echo $rp->getChangedPrice();
        //exit();
        //$update = [array('id'=> '5687','sale_price' =>'555','regular_price'=>'655'),array('id'=> '5693','sale_price' =>'540','regular_price'=>'590')];
-       $rp->discard($wp_id);
+       $rp->discardChangePrice($wp_id);
        //echo $rp->getChangedPrice();
     }else{
         echo 'No Authorized';

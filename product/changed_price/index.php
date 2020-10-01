@@ -11,7 +11,7 @@ if(isset($_GET['token'])){
         $data = json_decode($data);
         $rp->setNewPrice($data);
       }else{
-        echo $rp->getChangedPrice();
+        echo $rp->getChangedPrice(array('estado'=>'pendiente'));
       }
     }else{
         echo 'No Authorized';
