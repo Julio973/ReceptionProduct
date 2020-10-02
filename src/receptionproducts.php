@@ -104,8 +104,18 @@ class ReceptionProduct{
        $control_mongo->setCollection('productos_cambio_precios');
        $control_mongo->conectarMongo();
        $encuentra = array('woocomerce_id' => $wp_id);
-       $control_mongo->eliminarCollection($encuentra);
+       $check = $control_mongo->eliminarCollection($encuentra);
        return $check;
+    }
+    function discardNewProduct(String $wp_id){
+      $check = false;
+      $control_mongo->setDataBaseMongo('bodega');
+      $control_mongo->setCollection('productos_nuevos');
+      $control_mongo->conectarMongo();
+      $query = array('productId' => $id_producto);
+      $update = array('$set'=> array('estado' => 'descartado'));
+      $check = $control_mongo->actualizar($query,$update);
+      return $check;
     }
     function setNewPrice(array $datos){
         $manager = ['update' => $datos];
