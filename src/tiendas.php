@@ -40,9 +40,9 @@ class Tienda{
             }
             $control_mongo->eliminarCollection($buscar);
             $control_mongo->setCollection('tiendas_productos');
-                    $control_mongo->conectarMongo();
-                    $query = array('$and' => array(array('producto_id' => '206944035'),array('tienda' => 'homedepot')));
-                    $control_mongo->eliminarCollection($query);
+            $control_mongo->conectarMongo();
+            $query = array('$and' => array(array('producto_id' => '206944035'),array('tienda' => 'homedepot')));
+            $control_mongo->eliminarCollection($query);
             exit();*/
             $total_productos_recividos = 0;
             $total_productos_recividos = count($product->skus);
@@ -137,7 +137,8 @@ class Tienda{
                 $asunto = 'Sometime products changes';
                 $body = $notificacion->plantillaUno($total_cambio_de_precio, $total_producto_nuevo);
                 $header = 'From: julio.herazo@admintaxi.com';
-                mail($para, $asunto, $body,$header);
+                echo $body;
+                //mail($para, $asunto, $body,$header);
             }  
         }else{
             $control_wordpress_market->setDataBaseMongo('wp_market');
